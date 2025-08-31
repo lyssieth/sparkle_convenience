@@ -65,7 +65,7 @@ impl ResponseHandle<'_, Message, DeleteParamsUnknown> {
 
 impl<T> ResponseHandle<'_, T, DeleteParamsMessage> {
     /// Delete the message after the given duration
-    #[expect(clippy::return_self_not_must_use, reason = "this is not a builder")]
+    #[must_use]
     pub fn delete_after(self, after: Duration) -> Self {
         spawn_delete(
             Arc::clone(&self.bot.http),
@@ -79,7 +79,7 @@ impl<T> ResponseHandle<'_, T, DeleteParamsMessage> {
 
 impl<T> ResponseHandle<'_, T, DeleteParamsWebhook> {
     /// Delete the webhook message after the given duration
-    #[expect(clippy::return_self_not_must_use, reason = "this is not a builder")]
+    #[must_use]
     pub fn delete_after(self, after: Duration) -> Self {
         spawn_delete(
             Arc::clone(&self.bot.http),

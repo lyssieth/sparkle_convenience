@@ -1,4 +1,6 @@
-#![doc = include_str!("../README.md")]
+#![warn(clippy::pedantic, clippy::nursery)]
+#![allow(missing_docs, reason = "because we hate fun")]
+#![cfg_attr(doc, doc = include_str!("../README.md"))]
 
 pub mod error;
 mod log;
@@ -9,14 +11,7 @@ pub mod reply;
 use std::{fmt::Debug, sync::Arc};
 
 use error::Error;
-use twilight_gateway::{
-    ConfigBuilder,
-    EventTypeFlags,
-    Intents,
-    Shard,
-    stream,
-    stream::ShardEventStream,
-};
+use twilight_gateway::{ConfigBuilder, EventTypeFlags, Intents, Shard};
 use twilight_http::Client;
 use twilight_model::{
     id::{Id, marker::WebhookMarker},
@@ -30,6 +25,8 @@ use twilight_model::{
 pub struct Bot {
     /// The application info of the bot
     pub application: Application,
+    /// So we can use them later
+    pub event_type_flags: EventTypeFlags,
     /// Twilight's HTTP client
     pub http: Arc<Client>,
     /// The webhook to log errors using
@@ -54,16 +51,14 @@ impl Bot {
         token: T,
         intents: Intents,
         event_types: EventTypeFlags,
-    ) -> Result<(Self, Shards), Error> {
+    ) -> Result<(Self, Vec<Shard>), Error> {
         let token_string = token.into();
 
         let http = Client::new(token_string.clone());
 
-        let shards = stream::create_recommended(
+        let shards = twilight_gateway::create_recommended(
             &http,
-            ConfigBuilder::new(token_string, intents)
-                .event_types(event_types)
-                .build(),
+            ConfigBuilder::new(token_string, intents).build(),
             |_, config_builder| config_builder.build(),
         )
         .await?
@@ -78,26 +73,9 @@ impl Bot {
                 application,
                 user,
                 logging_webhook: None,
+                event_type_flags: event_types,
             },
-            Shards(shards),
+            shards,
         ))
-    }
-}
-
-/// Thin wrapper over the bot's shards for abstracting event streams
-///
-/// Returned in [`Bot::new`]
-#[derive(Debug)]
-pub struct Shards(pub Vec<Shard>);
-
-impl Shards {
-    /// Return Twilight's event stream
-    ///
-    /// # Warning
-    ///
-    /// This method shouldn't be called repeatedly, you should instead assign
-    /// the stream to a variable and call `next` on that
-    pub fn events(&mut self) -> ShardEventStream<'_> {
-        ShardEventStream::new(self.0.iter_mut())
     }
 }

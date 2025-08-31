@@ -5,12 +5,11 @@ mod http_error;
 mod tests;
 
 use std::{
-    any::type_name,
     error,
     fmt::{self, Debug, Display, Formatter},
 };
 
-use twilight_gateway::stream;
+use twilight_gateway::error::StartRecommendedError;
 use twilight_http::response::DeserializeBodyError;
 use twilight_model::guild::Permissions;
 use twilight_validate::{message::MessageValidationError, request};
@@ -42,7 +41,7 @@ pub enum Error {
     RequestValidation(#[from] request::ValidationError),
     /// A [`stream::StartRecommendedError`] was returned
     #[error("{0}")]
-    StartRecommended(#[from] stream::StartRecommendedError),
+    StartRecommended(#[from] StartRecommendedError),
 }
 
 /// Trait implemented on types that can be converted into an [`anyhow::Error`]
@@ -120,6 +119,7 @@ impl<C> UserError<C> {
     ///
     /// Checks if the error is a permission error or if it should be ignored,
     /// returns [`UserError::Internal`] if not
+    #[must_use]
     pub const fn from_http_err(http_err: &twilight_http::Error) -> Self {
         match http_error::Error::from_http_err(http_err) {
             http_error::Error::UnknownMessage

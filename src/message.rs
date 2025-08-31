@@ -5,7 +5,7 @@ mod delete_after;
 use serde::de::DeserializeOwned;
 use twilight_http::{
     Response,
-    request::channel::webhook::ExecuteWebhook,
+    request::channel::webhook,
     response::{DeserializeBodyError, marker::EmptyBody},
 };
 use twilight_model::{
@@ -15,7 +15,6 @@ use twilight_model::{
         marker::{ChannelMarker, MessageMarker, UserMarker, WebhookMarker},
     },
 };
-use twilight_validate::message::MessageValidationError;
 
 use crate::{
     Bot,
@@ -79,11 +78,11 @@ impl ReplyHandle<'_> {
             bot: self.bot,
             delete_params: DeleteParamsUnknown,
             response: create_message
-                .content(&self.reply.content)?
-                .embeds(&self.reply.embeds)?
-                .components(&self.reply.components)?
-                .attachments(&self.reply.attachments)?
-                .sticker_ids(&self.reply.sticker_ids)?
+                .content(&self.reply.content)
+                .embeds(&self.reply.embeds)
+                .components(&self.reply.components)
+                .attachments(&self.reply.attachments)
+                .sticker_ids(&self.reply.sticker_ids)
                 .flags(self.reply.flags)
                 .tts(self.reply.tts)
                 .await?,
@@ -136,7 +135,7 @@ impl ReplyHandle<'_> {
         Ok(ResponseHandle {
             bot: self.bot,
             delete_params: DeleteParamsUnknown {},
-            response: self.execute_webhook_request(webhook_id, token)?.await?,
+            response: self.execute_webhook_request(webhook_id, token).await?,
         })
     }
 
@@ -158,21 +157,24 @@ impl ReplyHandle<'_> {
             bot: self.bot,
             delete_params: DeleteParamsUnknown {},
             response: self
-                .execute_webhook_request(webhook_id, token)?
+                .execute_webhook_request(webhook_id, token)
                 .wait()
                 .await?,
         })
     }
 
-    fn execute_webhook_request<'handle>(
+    fn execute_webhook_request<'handle, 'str>(
         &'handle self,
         webhook_id: Id<WebhookMarker>,
-        token: &'handle str,
-    ) -> Result<ExecuteWebhook<'handle>, MessageValidationError> {
+        token: &'str str,
+    ) -> webhook::ExecuteWebhook<'handle>
+    where
+        'str: 'handle,
+    {
         let mut execute_webhook = self.bot.http.execute_webhook(webhook_id, token);
 
         if let Some(username) = self.reply.username.as_ref() {
-            execute_webhook = execute_webhook.username(username)?;
+            execute_webhook = execute_webhook.username(username);
         }
         if let Some(avatar_url) = self.reply.avatar_url.as_ref() {
             execute_webhook = execute_webhook.avatar_url(avatar_url);
@@ -187,13 +189,13 @@ impl ReplyHandle<'_> {
             execute_webhook = execute_webhook.allowed_mentions(allowed_mentions.as_ref());
         }
 
-        Ok(execute_webhook
-            .content(&self.reply.content)?
-            .embeds(&self.reply.embeds)?
-            .components(&self.reply.components)?
-            .attachments(&self.reply.attachments)?
+        execute_webhook
+            .content(&self.reply.content)
+            .embeds(&self.reply.embeds)
+            .components(&self.reply.components)
+            .attachments(&self.reply.attachments)
             .flags(self.reply.flags)
-            .tts(self.reply.tts))
+            .tts(self.reply.tts)
     }
 
     /// Report an error returned in a message context to the user
@@ -259,10 +261,10 @@ impl ReplyHandle<'_> {
                 message_id,
             },
             response: update_message
-                .content(Some(&self.reply.content))?
-                .embeds(Some(&self.reply.embeds))?
-                .components(Some(&self.reply.components))?
-                .attachments(&self.reply.attachments)?
+                .content(Some(&self.reply.content))
+                .embeds(Some(&self.reply.embeds))
+                .components(Some(&self.reply.components))
+                .attachments(&self.reply.attachments)
                 .flags(self.reply.flags)
                 .await?,
         })
@@ -331,10 +333,10 @@ impl ReplyHandle<'_> {
         }
 
         let response = update_webhook_message
-            .content(Some(&self.reply.content))?
-            .embeds(Some(&self.reply.embeds))?
-            .components(Some(&self.reply.components))?
-            .attachments(&self.reply.attachments)?
+            .content(Some(&self.reply.content))
+            .embeds(Some(&self.reply.embeds))
+            .components(Some(&self.reply.components))
+            .attachments(&self.reply.attachments)
             .await?;
 
         Ok(ResponseHandle {

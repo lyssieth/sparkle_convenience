@@ -3,7 +3,7 @@ use twilight_http::{
     error::ErrorType,
 };
 
-pub(crate) enum Error {
+pub(super) enum Error {
     FailedDm,
     MissingAccess,
     MissingPermissions,

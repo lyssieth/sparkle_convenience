@@ -1,8 +1,5 @@
 use twilight_http::request::channel::webhook::ExecuteWebhook;
-use twilight_model::{
-    http::attachment::Attachment,
-    id::{Id, marker::ChannelMarker},
-};
+use twilight_model::id::{Id, marker::ChannelMarker};
 
 use crate::{Bot, error::Error};
 
@@ -22,22 +19,7 @@ impl Bot {
     ///
     /// Returns [`Error::Http`] if executing the webhook fails
     pub async fn log(&self, message: &str) -> Result<(), Error> {
-        match self.logging_execute_webhook()?.content(message) {
-            Ok(exec_webhook) => exec_webhook.await?,
-            Err(_) => {
-                self.logging_execute_webhook()?
-                    .content(&format!(
-                        "{}...",
-                        message.chars().take(100).collect::<String>(),
-                    ))?
-                    .attachments(&[Attachment::from_bytes(
-                        "log_message.txt".to_owned(),
-                        message.to_owned().into_bytes(),
-                        0,
-                    )])?
-                    .await?
-            }
-        };
+        self.logging_execute_webhook()?.content(message).await?;
 
         Ok(())
     }
@@ -51,7 +33,7 @@ impl Bot {
         Ok(self
             .http
             .execute_webhook(*webhook_id, webhook_token)
-            .username(&self.user.name)?)
+            .username(&self.user.name))
     }
 
     /// Set the channel to log messages to
@@ -83,7 +65,7 @@ impl Bot {
             webhook
         } else {
             self.http
-                .create_webhook(channel_id, "Bot Error Logger")?
+                .create_webhook(channel_id, "Bot Error Logger")
                 .await?
                 .model()
                 .await?
